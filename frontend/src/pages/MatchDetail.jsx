@@ -14,6 +14,7 @@ function MatchDetail() {
   const [currentUser, setCurrentUser] = useState(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
@@ -36,14 +37,17 @@ function MatchDetail() {
 
     const fetchData = async () => {
       try {
-        const allMatches = await getMatches();
+        const [allMatches, playerData] = await Promise.all([
+          getMatches(),
+          getMatchPlayers(id),
+        ]);
         const foundMatch = allMatches.find((m) => String(m.id) === String(id));
         setMatch(foundMatch || null);
-
-        const playerData = await getMatchPlayers(id);
         setPlayers(playerData);
       } catch (err) {
         setError(err.message);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -74,10 +78,7 @@ function MatchDetail() {
     }
 
     try {
-      const result = await joinMatch({
-        match_id: Number(id),
-      });
-
+      const result = await joinMatch({ match_id: Number(id) });
       setMessage(result.message || "Tham gia trận thành công");
 
       const playerData = await getMatchPlayers(id);
@@ -93,115 +94,179 @@ function MatchDetail() {
       player.name ||
       player.full_name ||
       player.username ||
-      `Player ${player.id}`
+      `Cầu thủ #${player.id}`
     );
   };
+
+  const spotsLeft = match ? Number(match.max_players) - players.length : 0;
+  const isFull = match ? players.length >= Number(match.max_players) : false;
+  const isAlreadyJoined = currentUser
+    ? players.some((p) => Number(p.id) === Number(currentUser.player_id))
+    : false;
 
   return (
     <div>
       <Navbar />
 
       <div className="container page-section">
-        {error && <p className="error-text">{error}</p>}
+        {loading && (
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <p>Đang tải chi tiết trận đấu...</p>
+          </div>
+        )}
 
-        {match && (
+        {!loading && error && !match && (
+          <div className="empty-box">{error}</div>
+        )}
+
+        {!loading && match && (
           <>
             <div className="detail-hero">
               <div className="detail-hero-left">
-                <span className="hero-badge">Chi tiết trận đấu</span>
+                <span className="page-badge">⚽ Chi tiết trận đấu</span>
                 <h1>{match.title}</h1>
                 <p>
                   Xem thông tin trận, kiểm tra số lượng người tham gia và đăng ký
                   ngay nếu còn chỗ trống.
                 </p>
 
-                <div className="detail-tags">
-                  <span className="match-badge">Đang mở đăng ký</span>
-                  <span className="detail-tag">
-                    Còn {Number(match.max_players) - players.length} chỗ
-                  </span>
+                <div className="quick-stat-row">
+                  <div className="quick-stat-chip">
+                    <strong>{players.length}</strong>
+                    <span>Đã tham gia</span>
+                  </div>
+                  <div className="quick-stat-chip">
+                    <strong>{match.max_players}</strong>
+                    <span>Tối đa</span>
+                  </div>
+                  <div className="quick-stat-chip">
+                    <strong style={{ color: spotsLeft > 0 ? "#31ff69" : "#f87171" }}>
+                      {spotsLeft}
+                    </strong>
+                    <span>Còn trống</span>
+                  </div>
+                </div>
+
+                <div className="detail-tags" style={{ marginTop: "16px" }}>
+                  {isFull ? (
+                    <span style={{ background: "#fee2e2", color: "#991b1b", padding: "7px 12px", borderRadius: "999px", fontSize: "13px", fontWeight: 800 }}>
+                      ❌ Đã đủ người
+                    </span>
+                  ) : (
+                    <span className="match-badge">🟢 Đang mở đăng ký</span>
+                  )}
+                  <span className="detail-tag">{spotsLeft} chỗ còn lại</span>
                 </div>
               </div>
 
               <div className="detail-hero-right">
                 <div className="detail-info-box">
-                  <h3>Thông tin nhanh</h3>
-                  <p><strong>Địa điểm:</strong> {match.location}</p>
-                  <p><strong>Thời gian:</strong> {formatDateTimeVN(match.time) || match.time}</p>
-                  <p><strong>Số người tối đa:</strong> {match.max_players}</p>
-                  <p><strong>Đã tham gia:</strong> {players.length}</p>
+                  <h3>📋 Thông tin nhanh</h3>
+                  <p>📍 <strong>Địa điểm:</strong> {match.location}</p>
+                  <p>🕐 <strong>Thời gian:</strong> {formatDateTimeVN(match.time) || match.time}</p>
+                  <p>👥 <strong>Số người tối đa:</strong> {match.max_players}</p>
+                  <p>✅ <strong>Đã tham gia:</strong> {players.length} người</p>
                 </div>
               </div>
             </div>
 
             <div className="detail-layout">
               <div className="simple-card">
-                <h2 style={{ marginBottom: "16px" }}>Thông tin trận</h2>
+                <h2 style={{ marginBottom: "16px" }}>Đăng ký tham gia</h2>
 
                 <div style={{ display: "grid", gap: "12px", marginBottom: "20px" }}>
+                  <p className="match-info">📍 <strong>Địa điểm:</strong> {match.location}</p>
+                  <p className="match-info">🕐 <strong>Thời gian:</strong> {formatDateTimeVN(match.time) || match.time}</p>
+                  <p className="match-info">👥 <strong>Tối đa:</strong> {match.max_players} người</p>
+                  <p className="match-info">✅ <strong>Đã tham gia:</strong> {players.length} người</p>
                   <p className="match-info">
-                    <strong>Địa điểm:</strong> {match.location}
-                  </p>
-                  <p className="match-info">
-                    <strong>Thời gian:</strong> {formatDateTimeVN(match.time) || match.time}
-                  </p>
-                  <p className="match-info">
-                    <strong>Số người tối đa:</strong> {match.max_players}
-                  </p>
-                  <p className="match-info">
-                    <strong>Số người đã tham gia:</strong> {players.length}
-                  </p>
-                  <p className="match-info">
-                    <strong>Số chỗ còn lại:</strong>{" "}
-                    {Number(match.max_players) - players.length}
+                    🔢 <strong>Còn trống:</strong>{" "}
+                    <span style={{ color: spotsLeft > 0 ? "#16944c" : "#dc2626", fontWeight: 800 }}>
+                      {spotsLeft} chỗ
+                    </span>
                   </p>
                 </div>
 
-                <div className="notice-box">
-                  Lưu ý: Nếu đã đăng ký nhưng không đến, bạn sẽ bị trừ 10.000 VNĐ.
+                <div className="notice-box-warning">
+                  ⚠️ Nếu đã đăng ký nhưng không đến, bạn sẽ bị trừ <strong>10.000 VNĐ</strong>.
                 </div>
 
-                <div style={{ marginTop: "22px" }}>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: 700 }}>
-                    Tài khoản tham gia
-                  </label>
-                  <input
-                    type="text"
-                    value={currentUser?.username || ""}
-                    className="single-input"
-                    disabled
-                  />
+                <div className="join-form-section">
+                  <div>
+                    <label style={{ display: "block", marginBottom: "8px", fontWeight: 800, color: "#264534" }}>
+                      Tài khoản tham gia
+                    </label>
+                    <input
+                      type="text"
+                      value={currentUser?.username || ""}
+                      className="single-input"
+                      disabled
+                      style={{ width: "100%" }}
+                    />
+                  </div>
+
+                  <button
+                    className="btn-primary"
+                    style={{ width: "100%" }}
+                    onClick={handleJoin}
+                    disabled={isFull || isAlreadyJoined}
+                  >
+                    {isAlreadyJoined ? "✅ Đã tham gia trận này" : isFull ? "❌ Đã đủ người" : "⚽ Tham gia trận ngay"}
+                  </button>
                 </div>
 
-                <button className="btn-primary" style={{ marginTop: "18px" }} onClick={handleJoin}>
-                  Tham gia trận
-                </button>
-
-                {message && <p className="success-text">{message}</p>}
-                {error && <p className="error-text">{error}</p>}
+                {message && (
+                  <div className="alert-success">✅ {message}</div>
+                )}
+                {error && (
+                  <div className="alert-error">⚠️ {error}</div>
+                )}
               </div>
 
               <div className="simple-card">
-                <h2 style={{ marginBottom: "16px" }}>Danh sách người tham gia</h2>
+                <h2 style={{ marginBottom: "16px" }}>
+                  Danh sách tham gia ({players.length}/{match.max_players})
+                </h2>
 
-                <div className="table-wrap" style={{ boxShadow: "none", padding: 0 }}>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Mã cầu thủ</th>
-                        <th>Tên cầu thủ</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {players.map((player) => (
-                        <tr key={player.id}>
-                          <td>{player.id}</td>
-                          <td>{getPlayerName(player)}</td>
+                {players.length === 0 ? (
+                  <div className="players-table-empty">
+                    Chưa có ai tham gia trận này.
+                  </div>
+                ) : (
+                  <div className="table-wrap" style={{ boxShadow: "none", padding: 0, background: "transparent", border: "none" }}>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Tên cầu thủ</th>
+                          <th>ID</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {players.map((player, idx) => (
+                          <tr key={player.id}>
+                            <td style={{ fontWeight: 700, color: "#16944c" }}>{idx + 1}</td>
+                            <td>
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <div style={{
+                                  width: "28px", height: "28px", borderRadius: "50%",
+                                  background: "linear-gradient(135deg,#22c55e,#16944c)",
+                                  color: "white", fontWeight: 900, fontSize: "12px",
+                                  display: "grid", placeItems: "center", flexShrink: 0
+                                }}>
+                                  {getPlayerName(player).charAt(0).toUpperCase()}
+                                </div>
+                                {getPlayerName(player)}
+                              </div>
+                            </td>
+                            <td>#{player.id}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           </>

@@ -137,3 +137,39 @@ export const getAdminMatches = async () => {
 
   return handleResponse(res, "Không lấy được danh sách trận đấu");
 };
+
+export const updateBookingStatus = async (id, status) => {
+  const res = await fetch(`${BASE_URL}/admin/bookings/${id}/status`, {
+    method: "PUT",
+    headers: getAuthHeaders(true),
+    body: JSON.stringify({ status }),
+  });
+  return handleResponse(res, "Cập nhật trạng thái thất bại");
+};
+
+export const updateDepositStatus = async (id, deposit_status) => {
+  const res = await fetch(`${BASE_URL}/admin/bookings/${id}/deposit`, {
+    method: "PUT",
+    headers: getAuthHeaders(true),
+    body: JSON.stringify({ deposit_status }),
+  });
+  return handleResponse(res, "Cập nhật trạng thái cọc thất bại");
+};
+
+export const updateFieldStatus = async (id, status) => {
+  const res = await fetch(`${BASE_URL}/admin/fields/${id}/status`, {
+    method: "PUT",
+    headers: getAuthHeaders(true),
+    body: JSON.stringify({ status }),
+  });
+  return handleResponse(res, "Cập nhật trạng thái sân thất bại");
+};
+
+export const updateMatchStatus = async (id, status) => {
+  const res = await fetch(`${BASE_URL}/admin/matches/${id}/status`, {
+    method: "PUT",
+    headers: getAuthHeaders(true),
+    body: JSON.stringify({ status }),
+  });
+  return handleResponse(res, "Cập nhật trạng thái trận thất bại");
+};

@@ -1,135 +1,129 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
 import { loginUser } from "../services/api";
+
+const DEMO_ACCOUNTS = {
+  testuser: {
+    password: "123456",
+    user: { id: 1, username: "testuser", role: "user",  email: "user@demo.com",  phone: "0901234567", player_id: 1 },
+  },
+  admin: {
+    password: "admin123",
+    user: { id: 2, username: "admin", role: "admin", email: "admin@demo.com", phone: "0909999888", player_id: 2 },
+  },
+};
 
 function Login() {
   const navigate = useNavigate();
-
-  const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-  });
-
+  const [formData, setFormData] = useState({ username: "", password: "" });
   const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError]     = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage("");
-    setError("");
+    setMessage(""); setError("");
 
     if (!formData.username || !formData.password) {
       setError("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.");
       return;
     }
 
+    const demo = DEMO_ACCOUNTS[formData.username];
+    if (demo && demo.password === formData.password) {
+      localStorage.setItem("token", "demo-token-" + demo.user.role);
+      localStorage.setItem("user", JSON.stringify(demo.user));
+      setMessage("Đăng nhập thành công!");
+      setTimeout(() => navigate("/"), 500);
+      return;
+    }
+
+    setLoading(true);
     try {
       const result = await loginUser(formData);
-
       localStorage.setItem("token", result.token);
       localStorage.setItem("user", JSON.stringify(result.user));
-
-      setMessage("Đăng nhập thành công");
-
-      setTimeout(() => {
-        navigate("/");
-      }, 700);
-    } catch (err) {
-      setError(err.message);
+      setMessage("Đăng nhập thành công!");
+      setTimeout(() => navigate("/"), 600);
+    } catch {
+      setError("Sai tên đăng nhập hoặc mật khẩu.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div>
-      <Navbar />
+    <div className="auth-full-bg">
+      {/* Floating shapes */}
+      <div className="auth-shape auth-shape-1" />
+      <div className="auth-shape auth-shape-2" />
+      <div className="auth-shape auth-shape-3" />
 
-      <div className="container page-section">
-        <div className="booking-layout">
-          <div className="booking-side-card">
-            <span className="hero-badge">Đăng nhập tài khoản</span>
-            <h1>Chào mừng bạn quay lại</h1>
-            <p>
-              Đăng nhập để đặt sân, tham gia trận bóng, theo dõi lịch cá nhân và
-              sử dụng đầy đủ các tính năng của nền tảng.
-            </p>
+      <div className="auth-center-card">
+        {/* Logo */}
+        <Link to="/" className="auth-card-logo">
+          <span className="auth-card-logo-icon">⚽</span>
+          <span className="auth-card-logo-text">
+            Đặt <span>Sân Bóng</span>
+          </span>
+        </Link>
 
-            <div className="booking-summary">
-              <div className="summary-item">
-                <span>Tính năng sau khi đăng nhập</span>
-                <strong>Đặt sân & tham gia trận</strong>
-              </div>
-              <div className="summary-item">
-                <span>Quản lý cá nhân</span>
-                <strong>Lịch của tôi / Hồ sơ</strong>
-              </div>
-              <div className="summary-item">
-                <span>Quyền quản trị</span>
-                <strong>Admin có thể vào trang quản lý</strong>
-              </div>
-            </div>
+        <h1 className="auth-card-title">Chào mừng trở lại!</h1>
+        <p className="auth-card-subtitle">
+          Đăng nhập để đặt sân, tham gia trận đấu và quản lý lịch cá nhân.
+        </p>
+
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="auth-form-group">
+            <label htmlFor="username">Tên đăng nhập</label>
+            <input
+              id="username" type="text" name="username"
+              value={formData.username} onChange={handleChange}
+              placeholder="Nhập tên đăng nhập"
+              autoComplete="username"
+            />
+          </div>
+          <div className="auth-form-group">
+            <label htmlFor="password">Mật khẩu</label>
+            <input
+              id="password" type="password" name="password"
+              value={formData.password} onChange={handleChange}
+              placeholder="Nhập mật khẩu"
+              autoComplete="current-password"
+            />
           </div>
 
-          <div className="simple-card">
-            <h2 style={{ marginBottom: "8px" }}>Đăng nhập</h2>
-            <p className="section-subtitle" style={{ marginBottom: "20px" }}>
-              Nhập thông tin tài khoản để tiếp tục sử dụng hệ thống.
-            </p>
+          <button type="submit" className="auth-submit-btn" disabled={loading}>
+            {loading ? "Đang đăng nhập..." : "🚀 Đăng nhập"}
+          </button>
+        </form>
 
-            <form className="booking-form" onSubmit={handleSubmit}>
-              <div>
-                <label>Tên đăng nhập</label>
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  placeholder="Nhập tên đăng nhập"
-                />
-              </div>
+        {message && (
+          <div className="auth-alert-success" style={{ marginTop: 14 }}>✅ {message}</div>
+        )}
+        {error && (
+          <div className="auth-alert-error" style={{ marginTop: 14 }}>⚠️ {error}</div>
+        )}
 
-              <div>
-                <label>Mật khẩu</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Nhập mật khẩu"
-                />
-              </div>
+        {/* Demo hint */}
+        <div className="auth-demo-hint">
+          <span>Demo nhanh:</span>
+          <button onClick={() => setFormData({ username: "testuser", password: "123456" })}>
+            👤 User
+          </button>
+          <button onClick={() => setFormData({ username: "admin", password: "admin123" })}>
+            🛡️ Admin
+          </button>
+        </div>
 
-              <button
-                type="submit"
-                className="btn-primary"
-                style={{ width: "fit-content" }}
-              >
-                Đăng nhập
-              </button>
-            </form>
-
-            {message && <p className="success-text">{message}</p>}
-            {error && <p className="error-text">{error}</p>}
-
-            <p style={{ marginTop: "18px", color: "#64748b" }}>
-              Chưa có tài khoản?{" "}
-              <Link to="/register" style={{ color: "#0b5ed7", fontWeight: 700 }}>
-                Đăng ký ngay
-              </Link>
-            </p>
-          </div>
+        <div className="auth-card-footer">
+          Chưa có tài khoản?{" "}
+          <Link to="/register">Đăng ký miễn phí →</Link>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

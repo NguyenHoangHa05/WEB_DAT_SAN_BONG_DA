@@ -1,155 +1,132 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
 import { registerUser } from "../services/api";
 
 function Register() {
   const navigate = useNavigate();
-
-  const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-    email: "",
-    phone: "",
-  });
-
+  const [formData, setFormData] = useState({ username: "", password: "", email: "", phone: "" });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage("");
-    setError("");
+    setMessage(""); setError("");
 
     if (!formData.username || !formData.password) {
       setError("Tên đăng nhập và mật khẩu là bắt buộc.");
       return;
     }
 
+    if (formData.password.length < 6) {
+      setError("Mật khẩu phải có ít nhất 6 ký tự.");
+      return;
+    }
+
+    setLoading(true);
     try {
       const result = await registerUser(formData);
-      setMessage(result.message || "Đăng ký thành công");
-
-      setTimeout(() => {
-        navigate("/login");
-      }, 900);
+      setMessage(result.message || "Đăng ký thành công! Đang chuyển đến đăng nhập...");
+      setTimeout(() => navigate("/login"), 1200);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Đăng ký thất bại. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div>
-      <Navbar />
+    <div className="auth-full-bg">
+      {/* Floating shapes */}
+      <div className="auth-shape auth-shape-1" />
+      <div className="auth-shape auth-shape-2" />
+      <div className="auth-shape auth-shape-3" />
 
-      <div className="container page-section">
-        <div className="booking-layout">
-          <div className="booking-side-card">
-            <span className="hero-badge">Tạo tài khoản mới</span>
-            <h1>Bắt đầu với ĐặtSânBóng</h1>
-            <p>
-              Tạo tài khoản để đặt sân, đăng ký tham gia trận đấu và theo dõi
-              toàn bộ lịch hoạt động của bạn trên hệ thống.
-            </p>
+      <div className="auth-center-card">
+        {/* Logo */}
+        <Link to="/" className="auth-card-logo">
+          <span className="auth-card-logo-icon">⚽</span>
+          <span className="auth-card-logo-text">
+            Đặt <span>Sân Bóng</span>
+          </span>
+        </Link>
 
-            <div className="booking-summary">
-              <div className="summary-item">
-                <span>Tài khoản mới</span>
-                <strong>Tự động tạo hồ sơ người chơi</strong>
-              </div>
-              <div className="summary-item">
-                <span>Sử dụng ngay</span>
-                <strong>Đặt sân, xem lịch, tham gia trận</strong>
-              </div>
-              <div className="summary-item">
-                <span>Mặc định quyền</span>
-                <strong>Người dùng</strong>
-              </div>
-            </div>
+        <h1 className="auth-card-title">Tạo tài khoản mới</h1>
+        <p className="auth-card-subtitle">
+          Đăng ký miễn phí để đặt sân, tham gia trận đấu và kết nối cộng đồng bóng đá.
+        </p>
+
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="auth-form-group">
+            <label htmlFor="username">
+              Tên đăng nhập <span style={{ color: "#dc2626" }}>*</span>
+            </label>
+            <input
+              id="username" type="text" name="username"
+              value={formData.username} onChange={handleChange}
+              placeholder="Nhập tên đăng nhập"
+              autoComplete="username"
+            />
           </div>
 
-          <div className="simple-card">
-            <h2 style={{ marginBottom: "8px" }}>Đăng ký tài khoản</h2>
-            <p className="section-subtitle" style={{ marginBottom: "20px" }}>
-              Điền thông tin cơ bản để tạo tài khoản mới.
-            </p>
-
-            <form className="booking-form" onSubmit={handleSubmit}>
-              <div>
-                <label>Tên đăng nhập</label>
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  placeholder="Nhập tên đăng nhập"
-                />
-              </div>
-
-              <div>
-                <label>Mật khẩu</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Nhập mật khẩu"
-                />
-              </div>
-
-              <div>
-                <label>Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Nhập email"
-                />
-              </div>
-
-              <div>
-                <label>Số điện thoại</label>
-                <input
-                  type="text"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="Nhập số điện thoại"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="btn-primary"
-                style={{ width: "fit-content" }}
-              >
-                Đăng ký
-              </button>
-            </form>
-
-            {message && <p className="success-text">{message}</p>}
-            {error && <p className="error-text">{error}</p>}
-
-            <p style={{ marginTop: "18px", color: "#64748b" }}>
-              Đã có tài khoản?{" "}
-              <Link to="/login" style={{ color: "#0b5ed7", fontWeight: 700 }}>
-                Đăng nhập ngay
-              </Link>
-            </p>
+          <div className="auth-form-group">
+            <label htmlFor="password">
+              Mật khẩu <span style={{ color: "#dc2626" }}>*</span>
+            </label>
+            <input
+              id="password" type="password" name="password"
+              value={formData.password} onChange={handleChange}
+              placeholder="Tối thiểu 6 ký tự"
+              autoComplete="new-password"
+            />
           </div>
+
+          <div className="auth-form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email" type="email" name="email"
+              value={formData.email} onChange={handleChange}
+              placeholder="example@email.com (không bắt buộc)"
+              autoComplete="email"
+            />
+          </div>
+
+          <div className="auth-form-group">
+            <label htmlFor="phone">Số điện thoại</label>
+            <input
+              id="phone" type="tel" name="phone"
+              value={formData.phone} onChange={handleChange}
+              placeholder="0901234567 (không bắt buộc)"
+              autoComplete="tel"
+            />
+          </div>
+
+          <button type="submit" className="auth-submit-btn" disabled={loading}>
+            {loading ? "Đang tạo tài khoản..." : "🎉 Đăng ký miễn phí"}
+          </button>
+        </form>
+
+        {message && (
+          <div className="auth-alert-success" style={{ marginTop: 14 }}>✅ {message}</div>
+        )}
+        {error && (
+          <div className="auth-alert-error" style={{ marginTop: 14 }}>⚠️ {error}</div>
+        )}
+
+        <div className="auth-card-footer">
+          Đã có tài khoản?{" "}
+          <Link to="/login">Đăng nhập ngay →</Link>
+        </div>
+
+        <div style={{ textAlign: "center", marginTop: "10px" }}>
+          <Link to="/" style={{ color: "#9dbdaa", fontSize: "13px", textDecoration: "none" }}>
+            ← Về trang chủ
+          </Link>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import AdminBookings from "./pages/AdminBookings.jsx";
 import AdminUsers from "./pages/AdminUsers.jsx";
 import AdminFields from "./pages/AdminFields.jsx";
 import AdminMatches from "./pages/AdminMatches.jsx";
+import AdminDashboard from "./pages/AdminDashboard.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
@@ -53,6 +54,15 @@ function App() {
             <ProtectedRoute>
               <Profile />
             </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
           }
         />
 
